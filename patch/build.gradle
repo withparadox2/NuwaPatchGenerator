@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+jar {
+  manifest {
+    attributes 'Main-Class': 'com.withparadox2.patchtool.AppMain'
+  }
+}
+
+dependencies {
+//  compile fileTree(dir: 'libs', include: ['*.jar'])
+  compile 'org.smali:dexlib2:2.0.3'
+  compile 'org.smali:baksmali:2.0.3'
+  compile 'org.smali:smali:2.0.3'
+  compile 'commons-io:commons-io:2.4'
+  compile 'org.antlr:antlr-runtime:3.5'
+
+}
