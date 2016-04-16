@@ -80,9 +80,7 @@ public class AppMain {
       return;
     }
     DiffInfo info = new DexDiffer().diff(newFile, oldFile);
-    for (DexBackedClassDef classDef : info.getModifiedClasses()) {
-      System.out.println(classDef.getType());
-    }
+
 
     File smaliDir = new File(file, "smali");
     if (!smaliDir.exists()) {

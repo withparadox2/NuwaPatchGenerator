@@ -17,8 +17,8 @@ public class DexDiffer {
     DexBackedDexFile newDexFile = DexFileFactory.loadDexFile(newFile, 19);
     DexBackedDexFile oldDexFile = DexFileFactory.loadDexFile(oldFile, 19);
     DiffInfo info = DiffInfo.getInstance();
-    boolean contains = false;
     for (DexBackedClassDef newClazz : newDexFile.getClasses()) {
+      boolean contains = false;
       for (DexBackedClassDef oldClazz : oldDexFile.getClasses()) {
         if (newClazz.equals(oldClazz)) {
           compareField(newClazz, oldClazz, info);
