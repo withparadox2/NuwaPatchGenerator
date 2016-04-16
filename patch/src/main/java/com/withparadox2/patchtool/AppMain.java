@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.URLDecoder;
 import java.util.HashSet;
 import java.util.Set;
 import org.antlr.runtime.RecognitionException;
@@ -24,24 +26,57 @@ import org.jf.util.IndentingWriter;
 public class AppMain {
 
   public static void main(String[] args) {
-    System.out.println("hello");
+    File file;
+    if (args.length == 0) {
+      String jarPath = getJarPath();
+      if (jarPath == null || !new File(jarPath).exists()) {
+        System.out.println("Please input apks path.");
+        return;
+      }
+      file = new File(jarPath).getParentFile();
+    } else {
+      file = new File(args[0]);
+    }
 
-    String pathOldApk = "E:\\android\\projects\\NuwaPatchGenerator\\patch\\apks\\old.apk";
-    String pathNewApk = "E:\\android\\projects\\NuwaPatchGenerator\\patch\\apks\\new.apk";
+    if (!file.exists() || !file.isDirectory()) {
+      System.out.print("Path doesn't exist or is not a directory.");
+      return;
+    }
     try {
-      new AppMain().extractApk(pathOldApk, pathNewApk);
+      new AppMain().extractApk(file);
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  public void extractApk(String oldApk, String newApk) throws IOException {
-    File oldFile = new File(oldApk);
+  static String getJarPath() {
+    String path = AppMain.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+    try {
+      String decodedPath = URLDecoder.decode(path, "UTF-8");
+      return decodedPath;
+    } catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    }
+    return path;
+  }
+
+  static boolean shouldAcceptClass(String clazz) {
+    if (clazz.contains("/R$") || clazz.endsWith("/R.class") || clazz.endsWith(
+        "/BuildConfig.class")) {
+      return false;
+    }
+    return true;
+  }
+
+  public void extractApk(File file) throws IOException {
+    File oldFile = new File(file, "old.apk");
     if (!oldFile.exists()) {
+      System.out.println("old.apk doesn't exist.");
       return;
     }
-    File newFile = new File(newApk);
+    File newFile = new File(file, "new.apk");
     if (!newFile.exists()) {
+      System.out.println("new.apk doesn't exist.");
       return;
     }
     DiffInfo info = new DexDiffer().diff(newFile, oldFile);
@@ -49,17 +84,16 @@ public class AppMain {
       System.out.println(classDef.getType());
     }
 
-    File out = new File("E:\\android\\projects\\NuwaPatchGenerator\\patch\\apks");
-    File smaliDir = new File(out, "smali");
+    File smaliDir = new File(file, "smali");
     if (!smaliDir.exists()) {
       smaliDir.mkdir();
     }
     try {
       FileUtils.cleanDirectory(smaliDir);
     } catch (Exception e) {
-
+      e.printStackTrace();
     }
-    File dexFile = new File(out, "diff.dex");
+    File dexFile = new File(file, "diff.dex");
     if (dexFile.exists() && !dexFile.delete()) {
       return;
     }
