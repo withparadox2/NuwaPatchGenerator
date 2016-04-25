@@ -11,6 +11,12 @@ import java.net.URLDecoder;
 import java.util.HashSet;
 import java.util.Set;
 import org.antlr.runtime.RecognitionException;
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jf.baksmali.Adaptors.ClassDefinition;
@@ -25,28 +31,62 @@ import org.jf.util.IndentingWriter;
 
 public class AppMain {
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     File file;
-    if (args.length == 0) {
-      String jarPath = getJarPath();
-      if (jarPath == null || !new File(jarPath).exists()) {
-        System.out.println("Please input apks path.");
+    if (args.length < 2) {
+      if (args.length == 0) {
+        String jarPath = getJarPath();
+        if (jarPath == null || !new File(jarPath).exists()) {
+          System.out.println("Please input apks path.");
+          return;
+        }
+        file = new File(jarPath).getParentFile();
+      } else {
+        file = new File(args[0]);
+      }
+      if (!file.exists() || !file.isDirectory()) {
+        System.out.print("Path doesn't exist or is not a directory.");
         return;
       }
-      file = new File(jarPath).getParentFile();
-    } else {
-      file = new File(args[0]);
-    }
-
-    if (!file.exists() || !file.isDirectory()) {
-      System.out.print("Path doesn't exist or is not a directory.");
-      return;
-    }
-    try {
       new AppMain().extractApk(file);
-    } catch (IOException e) {
-      e.printStackTrace();
+    } else {
+      Options options = createOptions();
+      try {
+        CommandLine cmdLine = new BasicParser().parse(options, args);
+        File newFile = cmdLine.hasOption("from") ? new File(cmdLine.getOptionValue("from")) : null;
+        File oldFile = cmdLine.hasOption("to") ? new File(cmdLine.getOptionValue("to")) : null;
+        File outFile = cmdLine.hasOption("out") ? new File(cmdLine.getOptionValue("out")) : null;
+        new AppMain().extractApk(oldFile, newFile, outFile);
+      } catch (ParseException e) {
+        e.printStackTrace();
+      }
     }
+  }
+
+  public static Options createOptions() {
+    Options options = new Options();
+    OptionBuilder.withLongOpt("from");
+    OptionBuilder.withDescription("new Apk file path.");
+    OptionBuilder.hasArg(true);
+    OptionBuilder.withArgName("loc");
+    Option fromOption = OptionBuilder.create("f");
+
+    options.addOption(fromOption);
+
+    OptionBuilder.withLongOpt("to");
+    OptionBuilder.withDescription("old Apk file path.");
+    OptionBuilder.hasArg(true);
+    OptionBuilder.withArgName("loc");
+    Option toOption = OptionBuilder.create("t");
+    options.addOption(toOption);
+
+    OptionBuilder.withLongOpt("out");
+    OptionBuilder.withDescription("output dir.");
+    OptionBuilder.hasArg(true);
+    OptionBuilder.withArgName("dir");
+    Option outOption = OptionBuilder.create("o");
+    options.addOption(outOption);
+    return options;
   }
 
   static String getJarPath() {
@@ -69,20 +109,25 @@ public class AppMain {
   }
 
   public void extractApk(File file) throws IOException {
-    File oldFile = new File(file, "old.apk");
-    if (!oldFile.exists()) {
+    extractApk(new File(file, "old.apk"), new File(file, "new.apk"), file);
+  }
+
+  public void extractApk(File oldFile, File newFile, File outFile) throws IOException {
+    if (oldFile == null || !oldFile.exists()) {
       System.out.println("old.apk doesn't exist.");
       return;
     }
-    File newFile = new File(file, "new.apk");
-    if (!newFile.exists()) {
+    if (newFile == null || !newFile.exists()) {
       System.out.println("new.apk doesn't exist.");
+      return;
+    }
+    if (outFile == null || !outFile.exists()) {
+      System.out.println("output file doesn't exist.");
       return;
     }
     DiffInfo info = new DexDiffer().diff(newFile, oldFile);
 
-
-    File smaliDir = new File(file, "smali");
+    File smaliDir = new File(outFile, "smali");
     if (!smaliDir.exists()) {
       smaliDir.mkdir();
     }
@@ -91,7 +136,7 @@ public class AppMain {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    File dexFile = new File(file, "diff.dex");
+    File dexFile = new File(outFile, "diff.dex");
     if (dexFile.exists() && !dexFile.delete()) {
       return;
     }
