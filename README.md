@@ -21,6 +21,11 @@ If you also put **patch.jar** under the folder *apkpath*, command line showed ab
 java -jar patch.jar
 ```
 
+Or you can specify apks path and output file path:
+```
+java jar patch.jar -f newApkPath -t oldApkPath -o outPutFilePath
+```
+
 When you finally get the patch file **diff.dex**, you can rename it to anything you need without extra working of packaging it to a jar file.
 
 [1]: https://github.com/jasonross/Nuwa
