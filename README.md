@@ -21,7 +21,7 @@ If you also put **patch.jar** under the folder *apkpath*, command line showed ab
 java -jar patch.jar
 ```
 
-Or you can specify apks path and output file path:
+Or you can specify apks' path and output file path respectively:
 ```
 java jar patch.jar -f newApkPath -t oldApkPath -o outPutFilePath
 ```
